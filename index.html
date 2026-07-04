@@ -97,7 +97,7 @@
   <div id="site">
     <header class="nav">
       <div class="brand">Katie <span>&amp;</span> Jorden</div>
-      <nav class="links"><a>Home</a><a>Story</a><a>Film</a><a>RSVP</a></nav>
+      <nav class="links"><a>Home</a><a>Story</a><a href="gallery.html">Gallery</a><a>RSVP</a></nav>
     </header>
 
     <section class="hero">
@@ -165,7 +165,8 @@
       var s = SPONSORS[Math.floor(Math.random() * SPONSORS.length)];
       var ad = document.createElement('div');
       ad.className = 'ad';
-      var w = Math.round(Math.min(window.innerWidth * 0.86, 236 + Math.random() * 96));
+      // The first ad is a small, innocuous corner ad; later ones vary.
+      var w = first ? 168 : Math.round(Math.min(window.innerWidth * 0.86, 236 + Math.random() * 96));
       ad.style.width = w + 'px';
       ad.style.left = (first ? 50 : 8 + Math.random() * 84) + 'vw';
       ad.style.top  = (first ? 44 : 8 + Math.random() * 74) + 'vh';
@@ -183,6 +184,12 @@
       sizeCanvas(cv);
       ad.querySelector('.media').appendChild(cv);
       ads.appendChild(ad);
+      if (first) {
+        // Tuck it into the bottom-right corner of the viewport.
+        var r = ad.getBoundingClientRect();
+        ad.style.left = (window.innerWidth  - r.width  / 2 - 12) + 'px';
+        ad.style.top  = (window.innerHeight - r.height / 2 - 12) + 'px';
+      }
       canvases.push({ cv: cv, ctx: cv.getContext('2d') });
       adCount++;
       return ad;

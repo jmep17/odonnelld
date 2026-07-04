@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <title>Katie &amp; Jorden — Gallery</title>
+  <meta property="og:title" content="Our Wedding Photos 📷" />
+  <meta property="og:description" content="A few favourites from the big day ♡" />
+  <meta property="og:image" content="https://jmep17.github.io/odonnelld/og-cover.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>" />
+
+  <style>
+    :root { --ink:#4a3f3b; --rose:#9c626a; --cream:#faf6f1; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--cream); color: var(--ink); }
+    body { font-family: Georgia, 'Times New Roman', serif; -webkit-tap-highlight-color: transparent; }
+
+    .nav { position: sticky; top: 0; z-index: 5;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; background: rgba(250,246,241,0.92);
+      backdrop-filter: blur(6px); border-bottom: 1px solid #eaddd6; }
+    .brand { font-size: clamp(18px, 5vw, 24px); }
+    .brand span { color: var(--rose); }
+    .brand a { color: inherit; text-decoration: none; }
+    .links { display: flex; gap: clamp(10px, 3.5vw, 26px); font-size: clamp(11px, 3vw, 14px);
+      font-family: system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; color: #8a7a72; }
+    .links a { color: inherit; text-decoration: none; white-space: nowrap; }
+    .links a.on { color: var(--rose); }
+
+    .hero { text-align: center; padding: clamp(26px, 7vw, 54px) 20px clamp(8px, 3vw, 20px); }
+    .hero h1 { margin: 0; font-weight: normal; font-size: clamp(30px, 9vw, 56px); }
+    .hero .sub { font-style: italic; color: #86766e; font-size: clamp(14px, 4vw, 20px); margin: 12px 0 0; }
+
+    /* Carousel */
+    .carousel { display: flex; gap: 16px; overflow-x: auto; padding: clamp(18px,5vw,32px) 6vw;
+      scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .carousel::-webkit-scrollbar { display: none; }
+    .shot { flex: 0 0 auto; width: min(74vw, 420px); scroll-snap-align: center; cursor: pointer; }
+    .shot img { display: block; width: 100%; height: auto; border-radius: 14px;
+      box-shadow: 0 16px 44px rgba(60,40,44,0.28); }
+    .shot p { text-align: center; font-style: italic; color: #90807a;
+      font-size: clamp(13px, 3.6vw, 16px); margin: 12px 0 0; }
+
+    .dots { display: flex; justify-content: center; gap: 8px; padding: 4px 0 10px; }
+    .dots i { width: 7px; height: 7px; border-radius: 50%; background: #d9c8c1; }
+    .dots i.on { background: var(--rose); }
+
+    .note { max-width: 620px; margin: clamp(14px,4vw,28px) auto 0; padding: 0 24px; text-align: center;
+      font-size: clamp(15px, 4.2vw, 18px); line-height: 1.7; color: #5f524d; font-style: italic; }
+    footer { text-align: center; color: #a2938c; font-style: italic;
+      padding: clamp(30px,8vw,56px) 20px clamp(40px,10vw,70px); font-size: 15px; }
+
+    /* Fullscreen video takeover */
+    #takeover { position: fixed; inset: 0; z-index: 100; background: #000; display: none; }
+    #takeover.show { display: block; }
+    #takeover video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="brand"><a href="index.html">Katie <span>&amp;</span> Jorden</a></div>
+    <nav class="links"><a href="index.html">Home</a><a>Story</a><a class="on">Gallery</a><a>RSVP</a></nav>
+  </header>
+
+  <section class="hero">
+    <h1>The Gallery</h1>
+    <p class="sub">a few favourites from the big day ♡</p>
+  </section>
+
+  <div class="carousel" id="carousel">
+    <figure class="shot" style="margin:0"><img src="photos/p1.jpg" alt="The first dance"><p>the first dance</p></figure>
+    <figure class="shot" style="margin:0"><img src="photos/p2.jpg" alt="Golden hour"><p>golden hour</p></figure>
+    <figure class="shot" style="margin:0"><img src="photos/p3.jpg" alt="The vows"><p>the vows</p></figure>
+    <figure class="shot" style="margin:0"><img src="photos/p4.jpg" alt="Cutting the cake"><p>cutting the cake</p></figure>
+    <figure class="shot" style="margin:0"><img src="photos/p5.jpg" alt="The send-off"><p>the send-off</p></figure>
+  </div>
+  <div class="dots" id="dots"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+
+  <p class="note">tap a photo to see it full size x</p>
+  <footer>Made with love · 2026</footer>
+
+  <div id="takeover">
+    <video id="tv" src="daydream.mp4" loop playsinline preload="auto"></video>
+  </div>
+
+  <script>
+    var carousel = document.getElementById('carousel');
+    var dots = document.getElementById('dots').children;
+    var takeover = document.getElementById('takeover');
+    var tv = document.getElementById('tv');
+
+    // Active-dot tracking as the carousel snaps.
+    carousel.addEventListener('scroll', function () {
+      var shots = carousel.children;
+      var mid = carousel.scrollLeft + carousel.clientWidth / 2;
+      for (var i = 0; i < shots.length; i++) {
+        var c = shots[i].offsetLeft + shots[i].offsetWidth / 2;
+        dots[i].className = Math.abs(c - mid) < shots[i].offsetWidth / 2 ? 'on' : '';
+      }
+    }, { passive: true });
+
+    function requestFS() {
+      var el = document.documentElement;
+      var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+      if (fn) { try { var p = fn.call(el); if (p && p.catch) p.catch(function(){}); } catch (e) {} }
+    }
+
+    // "Tap a photo to see it full size" — well, they'll see SOMETHING full size.
+    carousel.addEventListener('click', function (ev) {
+      var shot = ev.target.closest && ev.target.closest('.shot');
+      if (!shot) return;
+      takeover.classList.add('show');
+      tv.muted = false; tv.volume = 1;
+      tv.play().catch(function(){});
+      requestFS();
+    });
+  </script>
+</body>
+</html>
