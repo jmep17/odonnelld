@@ -127,6 +127,32 @@
       border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 600; }
     #cookie .yes { background: #1a73e8; color: #fff; }
     #cookie .no  { background: #eceef1; color: #3c4043; }
+
+    /* The trophy: a golden ribbon sweeping across the whole screen. */
+    #banner { position: fixed; top: 40%; left: 50%; width: 170vw; z-index: 70;
+      pointer-events: none; opacity: 0;
+      transform: translate(-50%,-50%) rotate(-7deg); }
+    #banner.show { opacity: 1; animation: sway 4.5s ease-in-out 1.5s infinite; }
+    #banner .ribbon { transform: translateX(-140vw); text-align: center;
+      padding: clamp(14px, 3.5vw, 28px) 0;
+      background: linear-gradient(90deg, #b3872f, #e8c26a, #f9ecc0, #e8c26a, #b3872f);
+      background-size: 200% 100%;
+      border-top: 3px solid rgba(255,255,255,0.9);
+      border-bottom: 3px solid rgba(255,255,255,0.9);
+      box-shadow: 0 14px 60px rgba(0,0,0,0.4); }
+    #banner.show .ribbon {
+      animation: sweep 1.2s cubic-bezier(0.16, 0.9, 0.29, 1.03) forwards,
+                 shimmer 3s linear 1.2s infinite; }
+    #banner .ribbon span { font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic; font-weight: bold; white-space: nowrap;
+      font-size: clamp(24px, 7.5vw, 64px); color: #fff;
+      text-shadow: 0 2px 0 rgba(122,84,10,0.55), 0 6px 26px rgba(0,0,0,0.35); }
+    @keyframes sweep { to { transform: translateX(0); } }
+    @keyframes shimmer { to { background-position: 200% 0; } }
+    @keyframes sway {
+      0%, 100% { transform: translate(-50%,-50%) rotate(-7deg) scale(1); }
+      50%      { transform: translate(-50%,-52%) rotate(-5.5deg) scale(1.03); }
+    }
   </style>
 </head>
 <body>
@@ -167,6 +193,8 @@
 
   <video id="master" src="daydream.mp4" muted loop playsinline preload="auto"></video>
   <div id="ads"></div>
+
+  <div id="banner"><div class="ribbon"><span>✨ You’ve been O’Donnell’d ✨</span></div></div>
 
   <div id="cookie">
     <p id="cookiemsg">We use cookies to make your experience unforgettable.</p>
@@ -246,7 +274,10 @@
       }
       canvases.push({ cv: cv, ctx: cv.getContext('2d') });
       adCount++;
-      if (adCount >= DANCE_AT) ads.classList.add('dance');
+      if (adCount >= DANCE_AT) {
+        ads.classList.add('dance');
+        document.getElementById('banner').classList.add('show');
+      }
       return ad;
     }
 
