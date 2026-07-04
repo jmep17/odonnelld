@@ -41,10 +41,7 @@
     .film h2::before, .film h2::after { content: "·"; color: var(--rose); margin: 0 12px; }
     .player { position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden;
       background: #1a1016; box-shadow: 0 18px 50px rgba(60,40,44,0.28); }
-    /* Real clip decodes here but is fully covered by the poster (feeds ad canvases only). */
-    .player #master { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-    .player .poster { position: absolute; inset: 0; z-index: 1;
-      background: url('poster.jpg') center/cover no-repeat; }
+    .player .poster { position: absolute; inset: 0; background: url('poster.jpg') center/cover no-repeat; }
     .player .bigplay { position: absolute; z-index: 2; left: 50%; top: 50%; transform: translate(-50%,-50%);
       width: clamp(58px, 15vw, 84px); aspect-ratio: 1; border: 0; border-radius: 50%;
       background: rgba(255,255,255,0.92); display: flex; align-items: center; justify-content: center; }
@@ -68,21 +65,32 @@
     footer { text-align: center; color: #a2938c; font-style: italic;
       padding: clamp(30px,8vw,56px) 20px clamp(40px,10vw,70px); font-size: 15px; }
 
-    /* Ads — each a <canvas> mirroring the one master decode. */
+    /* Hidden decoder — always on screen so scrolling can't pause it. */
+    #master { position: fixed; left: 3px; bottom: 3px; width: 4px; height: 4px;
+      opacity: 0.02; pointer-events: none; z-index: 0; }
+
+    /* Ads styled like real display ads. */
     #ads { position: fixed; inset: 0; z-index: 40; pointer-events: none; }
-    .ad { position: absolute; pointer-events: auto; background: #0d0d0f;
-      border-radius: 9px; overflow: hidden; border: 1px solid rgba(255,255,255,0.25);
-      box-shadow: 0 16px 48px rgba(0,0,0,0.6); transition: transform 0.18s ease; will-change: transform; }
-    .adbar { display: flex; align-items: center; justify-content: space-between;
-      background: linear-gradient(90deg, #4a3dd0, #7b3ff2); color: #fff;
-      font-family: system-ui, sans-serif; font-weight: 700; font-size: clamp(11px,3vw,13px);
-      padding: 6px 7px 6px 11px; }
-    .adbar .lbl i { font-style: normal; background: rgba(255,255,255,0.9); color: #3a2ea8;
-      border-radius: 3px; padding: 1px 5px; margin-right: 6px; font-size: 0.85em; }
-    .x { appearance: none; -webkit-appearance: none; border: 0; cursor: pointer;
-      background: rgba(255,255,255,0.92); color: #222; font-weight: 800;
-      width: 1.7em; height: 1.7em; border-radius: 5px; font-size: 1em; line-height: 1; }
+    .ad { position: absolute; pointer-events: auto; background: #fff;
+      border: 1px solid #dadce0; border-radius: 8px; overflow: hidden;
+      box-shadow: 0 10px 34px rgba(0,0,0,0.3); font-family: Arial, Helvetica, system-ui, sans-serif;
+      transition: transform 0.18s ease; will-change: transform; }
+    .adhead { display: flex; align-items: center; gap: 5px; padding: 4px 6px;
+      font-size: 11px; color: #5f6368; line-height: 1; }
+    .adhead .ai { font-size: 12px; color: #7a8794; }
+    .adhead .lbl { background: #eceef1; border-radius: 3px; padding: 1px 5px; font-size: 10px; font-weight: 700; }
+    .adhead .x { margin-left: auto; appearance: none; -webkit-appearance: none; border: 0; cursor: pointer;
+      background: #eceef1; color: #3c4043; width: 20px; height: 20px; border-radius: 50%;
+      font-size: 12px; font-weight: 700; line-height: 1; }
     .ad canvas { display: block; width: 100%; height: auto; background: #000; pointer-events: none; }
+    .adfoot { display: flex; align-items: center; gap: 8px; padding: 8px 9px; }
+    .adfoot .txt { flex: 1; min-width: 0; }
+    .adfoot .txt b { display: block; font-size: 13px; color: #202124;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .adfoot .txt span { display: block; font-size: 12px; color: #5f6368;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .adfoot .cta { flex-shrink: 0; background: #1a73e8; color: #fff; border: 0; border-radius: 4px;
+      padding: 7px 12px; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -101,7 +109,6 @@
     <section class="film">
       <h2>Our Wedding Film</h2>
       <div class="player">
-        <video id="master" src="daydream.mp4" autoplay muted loop playsinline preload="auto"></video>
         <div class="poster"></div>
         <button class="bigplay" aria-label="Play"></button>
         <div class="ctrl"><span class="tri"></span><span class="track"><i></i></span><span class="t">1:12 / 4:32</span></div>
@@ -119,6 +126,7 @@
     <footer>Made with love · 2026</footer>
   </div>
 
+  <video id="master" src="daydream.mp4" autoplay muted loop playsinline preload="auto"></video>
   <div id="ads"></div>
 
   <script>
@@ -127,6 +135,15 @@
     var canvases = [];
     var soundOn = false;
     var adCount = 0, zTop = 40, MAX_ADS = 48;
+
+    var SPONSORS = [
+      { name: 'Kinloch Wedding Films', line: 'Cinematic wedding videography', cta: 'Learn more' },
+      { name: 'Honeymoon Escapes', line: 'Beach villas up to 40% off', cta: 'Book now' },
+      { name: 'Everly & Co.', line: 'Anniversary rings, handmade', cta: 'Shop' },
+      { name: 'CanvasNest', line: 'Your photos, printed big', cta: 'Get 30% off' },
+      { name: 'StreamHaven', line: 'Films free for 30 days', cta: 'Try free' },
+      { name: 'Petal &amp; Vine', line: 'Fresh flowers, next day', cta: 'Order' }
+    ];
 
     master.play().catch(function(){});
 
@@ -147,21 +164,26 @@
     })();
 
     function makeAd(first) {
+      var s = SPONSORS[Math.floor(Math.random() * SPONSORS.length)];
       var ad = document.createElement('div');
       ad.className = 'ad';
-      var w = first ? 66 : (28 + Math.random() * 30);
-      ad.style.width = w + 'vmin';
+      var w = Math.round(Math.min(window.innerWidth * 0.86, 236 + Math.random() * 96));
+      ad.style.width = w + 'px';
       ad.style.left = (first ? 50 : 8 + Math.random() * 84) + 'vw';
-      ad.style.top  = (first ? 46 : 8 + Math.random() * 78) + 'vh';
-      var rot = first ? 0 : (Math.random() * 20 - 10);
+      ad.style.top  = (first ? 44 : 8 + Math.random() * 74) + 'vh';
+      var rot = first ? 0 : (Math.random() * 16 - 8);
       ad.dataset.rot = rot; ad.dataset.scale = 1;
       ad.style.transform = 'translate(-50%,-50%) rotate(' + rot + 'deg)';
       ad.style.zIndex = ++zTop;
-      ad.innerHTML = '<div class="adbar"><span class="lbl"><i>Ad</i>Sponsored</span>' +
-                     '<button class="x" aria-label="Close">✕</button></div>';
+      ad.innerHTML =
+        '<div class="adhead"><span class="ai">ⓘ</span><span class="lbl">Ad</span>' +
+        '<button class="x" aria-label="Close">✕</button></div>' +
+        '<div class="media"></div>' +
+        '<div class="adfoot"><div class="txt"><b>' + s.name + '</b><span>' + s.line + '</span></div>' +
+        '<button class="cta">' + s.cta + '</button></div>';
       var cv = document.createElement('canvas');
       sizeCanvas(cv);
-      ad.appendChild(cv);
+      ad.querySelector('.media').appendChild(cv);
       ads.appendChild(ad);
       canvases.push({ cv: cv, ctx: cv.getContext('2d') });
       adCount++;
@@ -182,9 +204,12 @@
       ad.style.transform = 'translate(-50%,-50%) rotate(' + ad.dataset.rot + 'deg) scale(' + s + ')';
     }
 
-    document.addEventListener('click', enableSound);
+    // Click, tap, OR scroll starts the music + video together.
+    ['click', 'pointerdown', 'touchstart', 'keydown', 'scroll', 'wheel'].forEach(function (evt) {
+      window.addEventListener(evt, enableSound, { passive: true });
+    });
 
-    // Every ✕ on every ad: grow it and spawn a couple more.
+    // Every ✕ on every ad: grow it and spawn two more.
     ads.addEventListener('click', function (ev) {
       var xb = ev.target.closest && ev.target.closest('.x');
       if (!xb) return;
