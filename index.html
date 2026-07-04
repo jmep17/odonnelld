@@ -6,82 +6,58 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
 
-  <!-- Link preview (what shows in iMessage / WhatsApp / etc.) -->
-  <title>Wedding Highlights</title>
-  <meta property="og:title" content="Wedding Highlights 💍" />
-  <meta property="og:description" content="Aw, here's the full reel ♡" />
+  <!-- Link preview -->
+  <title>Our Wedding Film</title>
+  <meta property="og:title" content="Our Wedding Film 🎬" />
+  <meta property="og:description" content="Aw, finally got the video back! ♡" />
   <meta property="og:image" content="https://jmep17.github.io/odonnelld/og-cover.png" />
   <meta property="og:type" content="video.other" />
   <meta name="twitter:card" content="summary_large_image" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>" />
 
   <style>
-    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+    html, body { margin: 0; height: 100%; background: #000; overflow: hidden;
+      font-family: 'Roboto', system-ui, -apple-system, Segoe UI, sans-serif; }
 
-    #stage {
-      position: fixed; inset: 0; overflow: hidden; background: #000;
-      cursor: pointer; -webkit-tap-highlight-color: transparent;
-    }
+    #stage { position: fixed; inset: 0; overflow: hidden; background: #000;
+      cursor: pointer; -webkit-tap-highlight-color: transparent; }
 
-    /* Original video: fills the screen, no bars. */
-    #player {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      object-fit: cover; background: #000; pointer-events: none; z-index: 0;
-    }
+    #player { position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; background: #000; pointer-events: none; z-index: 0; }
 
     /* Cloned videos spawned on every tap. */
-    .clone {
-      position: absolute; height: auto;
-      border: 3px solid #fff; border-radius: 10px;
-      box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
-      background: #000; pointer-events: none;
-    }
+    .clone { position: absolute; height: auto; border: 3px solid #fff;
+      border-radius: 10px; box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+      background: #000; pointer-events: none; }
+
+    /* ---- Fake pre-roll "ad" UI (YouTube-style) ---- */
+    #adbar { position: fixed; left: 0; bottom: 0; height: 4px; width: 0%;
+      background: #ffca28; z-index: 40; transition: width 5s linear; }
+
+    #adtag { position: fixed; left: 3.5vw; bottom: 8vh; z-index: 41;
+      display: flex; align-items: center; gap: 8px;
+      color: #fff; font-size: clamp(12px, 3.4vw, 15px); font-weight: 500;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.7); pointer-events: none; }
+    #adtag b { background: #ffca28; color: #111; font-weight: 700;
+      padding: 2px 6px; border-radius: 3px; font-size: 0.8em; letter-spacing: .3px; }
+
+    #skip { position: fixed; right: 3.5vw; bottom: 8vh; z-index: 42;
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(0, 0, 0, 0.72); color: #fff;
+      font-size: clamp(13px, 3.7vw, 17px); font-weight: 500;
+      padding: 0.7em 1.05em; border: 1px solid rgba(255,255,255,0.55);
+      border-left-width: 0; border-radius: 2px;
+      transition: left 0.2s ease, top 0.2s ease, right 0.2s ease, bottom 0.2s ease; }
+    #skip.ready { cursor: pointer; background: rgba(0, 0, 0, 0.82); }
+    #skip .chev { font-size: 1.15em; opacity: 0; }
+    #skip.ready .chev { opacity: 1; }
 
     /* Emoji burst particles. */
-    .emoji {
-      position: fixed; z-index: 60; pointer-events: none;
-      will-change: transform, opacity; animation: burst 1s ease-out forwards;
-    }
+    .emoji { position: fixed; z-index: 60; pointer-events: none;
+      will-change: transform, opacity; animation: burst 1s ease-out forwards; }
     @keyframes burst {
       0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
       100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.25) rotate(var(--rot)); opacity: 0; }
-    }
-
-    /* ---- The decoy: looks like a wedding highlights reel ---- */
-    #decoy {
-      position: fixed; inset: 0; z-index: 100;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      background:
-        radial-gradient(120% 90% at 50% 30%, rgba(255,255,255,0.10), rgba(0,0,0,0) 60%),
-        linear-gradient(160deg, #3a2c42 0%, #6b4f5a 55%, #96747d 100%);
-      color: #fff8fa; text-align: center;
-      font-family: Georgia, 'Times New Roman', serif;
-      transition: opacity 0.55s ease;
-      user-select: none;
-    }
-    #decoy.gone { opacity: 0; pointer-events: none; }
-
-    #play {
-      width: clamp(84px, 22vw, 128px); aspect-ratio: 1;
-      border-radius: 50%; background: rgba(255, 255, 255, 0.92);
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-      margin-bottom: clamp(20px, 5vh, 40px);
-    }
-    #play::after {
-      content: ""; margin-left: 12%;
-      border-style: solid; border-width: clamp(16px,4.4vw,24px) 0 clamp(16px,4.4vw,24px) clamp(28px,7.4vw,40px);
-      border-color: transparent transparent transparent #2a1c30;
-    }
-    #decoy h1 {
-      margin: 0; font-weight: normal;
-      font-size: clamp(30px, 8.5vw, 60px); letter-spacing: 0.01em;
-      text-shadow: 0 3px 22px rgba(0, 0, 0, 0.5);
-    }
-    #decoy p {
-      margin: 0.5em 0 0; font-style: italic;
-      font-size: clamp(15px, 4.4vw, 26px); color: #ecdfe4;
-      letter-spacing: 0.08em;
     }
   </style>
 </head>
@@ -90,40 +66,42 @@
     <video id="player" src="daydream.mp4" autoplay muted loop playsinline preload="auto"></video>
   </div>
 
-  <div id="decoy">
-    <div id="play"></div>
-    <h1>Wedding Highlights</h1>
-    <p>♡&nbsp;&nbsp;the full reel&nbsp;&nbsp;♡</p>
-  </div>
+  <div id="adtag"><b>Ad</b><span>Your video will play after the ad</span></div>
+  <div id="adbar"></div>
+  <div id="skip"><span>Skip Ad in <span id="cd">5</span></span><span class="chev">▷|</span></div>
 
   <script>
     var stage  = document.getElementById('stage');
     var player = document.getElementById('player');
-    var decoy  = document.getElementById('decoy');
+    var skip   = document.getElementById('skip');
+    var cd     = document.getElementById('cd');
+    var adtag  = document.getElementById('adtag');
+    var adbar  = document.getElementById('adbar');
 
-    var started = false;
-    var clones  = 0;
-    var MAX_CLONES = 16;               // keep phones happy
+    var skipReady = false, started = false, clones = 0;
+    var MAX_CLONES = 16;
     var emojis = ['❤️', '💕', '✨', '🎉', '💍', '🎶', '🌸'];
 
-    // Muted autoplay behind the decoy so it's already rolling on reveal.
+    // Muted "ad" autoplays immediately; countdown runs with no interaction.
     player.play().catch(function () {});
+    requestAnimationFrame(function () { adbar.style.width = '100%'; });
+
+    var n = 5;
+    var timer = setInterval(function () {
+      n--;
+      if (n > 0) { cd.textContent = n; }
+      else {
+        clearInterval(timer);
+        skipReady = true;
+        skip.classList.add('ready');
+        skip.querySelector('span').textContent = 'Skip Ad ';
+      }
+    }, 1000);
 
     function requestFS() {
       var el = document.documentElement;
       var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
       if (fn) { try { var p = fn.call(el); if (p && p.catch) p.catch(function () {}); } catch (e) {} }
-    }
-
-    function start() {
-      if (started) return;
-      started = true;
-      decoy.classList.add('gone');
-      setTimeout(function () { if (decoy.parentNode) decoy.remove(); }, 600);
-      requestFS();
-      player.muted = false;
-      player.volume = 1;
-      player.play().catch(function () {});
     }
 
     function spawnClone() {
@@ -134,7 +112,7 @@
       v.muted = true; v.loop = true; v.autoplay = true;
       v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
       v.className = 'clone';
-      var w = 34 + Math.random() * 30;                 // vmin — responsive
+      var w = 34 + Math.random() * 30;
       v.style.width = w + 'vmin';
       v.style.left = (8 + Math.random() * 84) + 'vw';
       v.style.top  = (8 + Math.random() * 80) + 'vh';
@@ -161,16 +139,35 @@
       }
     }
 
-    // Tapping the decoy starts the show (this is the audio + fullscreen gesture).
-    decoy.addEventListener('click', function (ev) { ev.stopPropagation(); start(); });
+    function dodgeSkip() {
+      skip.style.right = 'auto'; skip.style.bottom = 'auto';
+      skip.style.left = (Math.random() * 72 + 10) + 'vw';
+      skip.style.top  = (Math.random() * 72 + 12) + 'vh';
+    }
 
-    // Every later tap clones the video and throws a little confetti.
-    stage.addEventListener('click', function (ev) {
-      if (!started) return;
-      var x = (ev.clientX != null) ? ev.clientX : window.innerWidth / 2;
-      var y = (ev.clientY != null) ? ev.clientY : window.innerHeight / 2;
+    // Reaching for "Skip Ad" is the trap: it clones instead of skipping.
+    function detonate(x, y) {
+      if (!skipReady) return;                 // must wait for the skip button
+      if (!started) {
+        started = true;
+        player.muted = false; player.volume = 1; player.play().catch(function () {});
+        requestFS();
+        adtag.style.display = 'none';
+        adbar.style.display = 'none';
+      }
       spawnClone();
       burst(x, y);
+      dodgeSkip();
+    }
+
+    skip.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      var r = skip.getBoundingClientRect();
+      detonate(r.left + r.width / 2, r.top + r.height / 2);
+    });
+    stage.addEventListener('click', function (ev) {
+      detonate(ev.clientX != null ? ev.clientX : window.innerWidth / 2,
+               ev.clientY != null ? ev.clientY : window.innerHeight / 2);
     });
   </script>
 </body>
