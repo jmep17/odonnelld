@@ -55,6 +55,15 @@
     .player .ctrl .track { flex: 1; height: 4px; border-radius: 3px; background: rgba(255,255,255,0.4); }
     .player .ctrl .track i { display: block; width: 26%; height: 100%; border-radius: 3px; background: var(--rose); }
     .player .ctrl .t { font-family: system-ui, sans-serif; font-size: 12px; opacity: 0.9; }
+    .player .loadwrap { position: absolute; inset: 0; z-index: 3; display: none;
+      flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+      background: rgba(12,8,14,0.72); color: #fff;
+      font-family: system-ui, sans-serif; font-size: clamp(13px, 3.8vw, 16px); }
+    .player .loadwrap.show { display: flex; }
+    .spin { width: 34px; height: 34px; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.25); border-top-color: #fff;
+      animation: spin 0.9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     .film .cap { text-align: center; font-style: italic; color: #90807a; font-size: 14px; margin: 14px 0 0; }
     .galcta { text-align: center; margin: clamp(18px,5vw,28px) 0 0; }
     .galcta a { display: inline-block; background: var(--rose); color: #fff; text-decoration: none;
@@ -78,7 +87,15 @@
     .ad { position: absolute; pointer-events: auto; background: #fff;
       border: 1px solid #dadce0; border-radius: 8px; overflow: hidden;
       box-shadow: 0 10px 34px rgba(0,0,0,0.3); font-family: Arial, Helvetica, system-ui, sans-serif;
+      transform: translate(-50%,-50%) rotate(var(--rot,0deg)) scale(var(--s,1));
       transition: transform 0.18s ease; will-change: transform; }
+    /* Once there are enough of them, the ads dance to the song. */
+    @keyframes bop {
+      0%, 100% { transform: translate(-50%,-48%) rotate(calc(var(--rot,0deg) - 4deg)) scale(var(--s,1)); }
+      50%      { transform: translate(-50%,-52%) rotate(calc(var(--rot,0deg) + 4deg)) scale(var(--s,1)); }
+    }
+    #ads.dance .ad { animation: bop var(--dur,0.6s) ease-in-out infinite;
+      animation-delay: var(--del,0s); }
     .adhead { display: flex; align-items: center; gap: 5px; padding: 4px 6px;
       font-size: 11px; color: #5f6368; line-height: 1; }
     .adhead .ai { font-size: 12px; color: #7a8794; }
@@ -130,6 +147,8 @@
       <div class="player">
         <div class="poster"></div>
         <button class="bigplay" aria-label="Play"></button>
+        <div class="loadwrap" id="loadwrap"><div class="spin"></div>
+          <span id="loadmsg">Loading your film… <b id="loadpct">0%</b></span></div>
         <div class="ctrl"><span class="tri"></span><span class="track"><i></i></span><span class="t">1:12 / 4:32</span></div>
       </div>
       <p class="cap">Highlights — filmed at Kinard House, Perthshire</p>
@@ -161,8 +180,8 @@
     var master = document.getElementById('master');
     var ads = document.getElementById('ads');
     var canvases = [];
-    var soundOn = false;
-    var adCount = 0, zTop = 40, MAX_ADS = 48;
+    var started = false, loading = false;
+    var adCount = 0, zTop = 40, MAX_ADS = 48, DANCE_AT = 8;
 
     // Ordered: plausible at first, increasingly self-aware as they breed.
     var SPONSORS = [
@@ -204,8 +223,10 @@
       ad.style.left = (first ? 50 : 8 + Math.random() * 84) + 'vw';
       ad.style.top  = (first ? 44 : 8 + Math.random() * 74) + 'vh';
       var rot = first ? 0 : (Math.random() * 16 - 8);
-      ad.dataset.rot = rot; ad.dataset.scale = 1;
-      ad.style.transform = 'translate(-50%,-50%) rotate(' + rot + 'deg)';
+      ad.dataset.scale = 1;
+      ad.style.setProperty('--rot', rot + 'deg');
+      ad.style.setProperty('--dur', (0.45 + Math.random() * 0.5).toFixed(2) + 's');
+      ad.style.setProperty('--del', (-Math.random()).toFixed(2) + 's');
       ad.style.zIndex = ++zTop;
       ad.innerHTML =
         '<div class="adhead"><span class="ai">ⓘ</span><span class="lbl">Ad</span>' +
@@ -225,16 +246,49 @@
       }
       canvases.push({ cv: cv, ctx: cv.getContext('2d') });
       adCount++;
+      if (adCount >= DANCE_AT) ads.classList.add('dance');
       return ad;
     }
 
-    // Nothing plays until the first interaction; then the video, audio and
-    // first ad all start together.
+    // First interaction: fake buffering theatre, THEN the betrayal.
     function start() {
-      if (soundOn) return;
-      soundOn = true;
+      if (started || loading) return;
+      loading = true;
+      master.play().catch(function(){});   // warm up muted, inside the gesture
+      var lw = document.getElementById('loadwrap');
+      var pctEl = document.getElementById('loadpct');
+      var msgEl = document.getElementById('loadmsg');
+      var bp = document.querySelector('.bigplay');
+      if (bp) bp.style.opacity = '0';
+      lw.classList.add('show');
+      var p = 0;
+      var iv = setInterval(function () {
+        p += p < 70 ? 7 : (p < 96 ? 3 : 1);
+        if (p >= 99) {
+          clearInterval(iv);
+          pctEl.textContent = '99%';
+          setTimeout(function () { msgEl.childNodes[0].textContent = 'Almost there… '; }, 700);
+          setTimeout(betray, 2100);        // hang at 99%, then…
+        } else {
+          pctEl.textContent = p + '%';
+        }
+      }, 90);
+    }
+
+    function betray() {
+      started = true; loading = false;
+      document.getElementById('loadwrap').classList.remove('show');
       master.muted = false; master.volume = 1;
       master.play().catch(function(){});
+      // iOS fallback: if the delayed unmute was blocked, the next tap fixes it.
+      var unmute = function () {
+        master.muted = false;
+        master.play().catch(function(){});
+        document.removeEventListener('click', unmute, true);
+        document.removeEventListener('touchstart', unmute, true);
+      };
+      document.addEventListener('click', unmute, true);
+      document.addEventListener('touchstart', unmute, true);
       var first = makeAd(true);
       first.style.opacity = '0'; first.style.transition = 'opacity .4s ease';
       requestAnimationFrame(function () { first.style.opacity = '1'; });
@@ -269,7 +323,7 @@
       if (rejects < COMEBACKS.length) {
         cookiemsg.textContent = COMEBACKS[rejects];
         rejects++;
-        if (soundOn && adCount < MAX_ADS) makeAd(false);
+        if (started && adCount < MAX_ADS) makeAd(false);
       } else {
         cookie.classList.add('gone');
       }
@@ -278,7 +332,7 @@
     // The "dead" nav links are ad space too.
     document.querySelectorAll('.links a:not([href])').forEach(function (a) {
       a.addEventListener('click', function () {
-        if (soundOn && adCount < MAX_ADS) makeAd(false);
+        if (started && adCount < MAX_ADS) makeAd(false);
       });
     });
 
