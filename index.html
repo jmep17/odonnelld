@@ -21,9 +21,8 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* This wrapper is what we scale to zoom into the singer's face.
-       The transform-origin points at the upper-center of the frame,
-       where the singer's face sits. */
+    /* Wrapper we scale to zoom into the singer's face. The origin points
+       at the upper-center of the frame, where the face sits. */
     #zoom {
       position: absolute;
       inset: 0;
@@ -37,19 +36,16 @@
       transform: scale(2.6);
     }
 
-    /* Size the iframe so the 16:9 video always COVERS the screen,
-       leaving no black bars in either orientation. */
+    /* Native player: object-fit:cover fills the screen with no bars
+       and no ads, ever. */
     #player {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 100vw;
-      height: 56.25vw;        /* 16:9 relative to viewport width  */
-      min-height: 100vh;
-      min-width: 177.78vh;    /* 16:9 relative to viewport height */
-      transform: translate(-50%, -50%);
-      border: 0;
-      pointer-events: none;   /* taps go to #stage, never to YouTube */
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+      pointer-events: none;
     }
 
     #hint {
@@ -80,77 +76,45 @@
 <body>
   <div id="stage">
     <div id="zoom">
-      <iframe
+      <!-- Drop a file named daydream.mp4 in the repo root and this plays
+           it ad-free. Swap the src if you name the file differently. -->
+      <video
         id="player"
-        src="https://www.youtube.com/embed/DFVBaOsWg-k?enablejsapi=1&autoplay=1&mute=1&controls=0&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&loop=1&playlist=DFVBaOsWg-k"
-        title="Daydream Believer"
-        allow="autoplay; encrypted-media"
-        allowfullscreen
-        frameborder="0"
-      ></iframe>
+        src="daydream.mp4"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+      ></video>
     </div>
     <div id="hint">tap anywhere</div>
   </div>
 
   <script>
-    // Load the YouTube IFrame Player API so we can start audio on the
-    // user's first tap (browsers block autoplay-with-sound until then).
-    var tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    document.head.appendChild(tag);
-
-    var player = null;
-    var soundOn = false;
-
-    window.onYouTubeIframeAPIReady = function () {
-      player = new YT.Player('player', {
-        events: {
-          onReady: function (e) {
-            // Kick off muted autoplay immediately for the classic
-            // "it's already playing" effect.
-            e.target.mute();
-            e.target.playVideo();
-          },
-          onStateChange: function (e) {
-            // Keep it looping even if the loop param is ignored.
-            if (e.data === YT.PlayerState.ENDED && player) {
-              player.seekTo(0);
-              player.playVideo();
-            }
-          }
-        }
-      });
-    };
-
     var stage = document.getElementById('stage');
     var hint = document.getElementById('hint');
+    var video = document.getElementById('player');
+    var soundOn = false;
 
-    function handleTap() {
+    // Kick off muted autoplay for the "it's already playing" effect.
+    var kickoff = video.play();
+    if (kickoff && kickoff.catch) {
+      kickoff.catch(function () { /* some browsers wait for the tap */ });
+    }
+
+    stage.addEventListener('click', function () {
       // First tap: turn the sound on (the gesture browsers require).
       if (!soundOn) {
         soundOn = true;
         hint.classList.add('hidden');
-        try {
-          if (player) {
-            player.unMute();
-            player.setVolume(100);
-            player.playVideo();
-          }
-        } catch (err) { /* API may not be ready yet; retry below */ }
+        video.muted = false;
+        video.volume = 1;
+        video.play();
       }
 
       // Every tap toggles the zoom into the singer's face.
       stage.classList.toggle('zoomed');
-    }
-
-    // Retry unmuting once the API is definitely up, in case the very
-    // first tap landed before onReady fired.
-    stage.addEventListener('click', function () {
-      handleTap();
-      if (soundOn && player && typeof player.unMute === 'function') {
-        player.unMute();
-        player.setVolume(100);
-      }
     });
   </script>
 </body>
