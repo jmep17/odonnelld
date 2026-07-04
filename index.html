@@ -5,7 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <title>Daydream Believer</title>
+
+  <!-- Link preview (what shows in iMessage / WhatsApp / etc.) -->
+  <title>Wedding Highlights</title>
+  <meta property="og:title" content="Wedding Highlights 💍" />
+  <meta property="og:description" content="Aw, here's the full reel ♡" />
+  <meta property="og:image" content="https://jmep17.github.io/odonnelld/og-cover.png" />
+  <meta property="og:type" content="video.other" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>" />
+
   <style>
     html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
 
@@ -14,195 +23,153 @@
       cursor: pointer; -webkit-tap-highlight-color: transparent;
     }
 
-    /* Wrapper we scale to zoom into the singer's face. */
-    #zoom {
-      position: absolute; inset: 0;
-      transform-origin: 50% 34%;
-      transform: scale(1);
-      transition: transform 900ms cubic-bezier(0.16, 0.84, 0.44, 1);
-      will-change: transform;
-    }
-
-    /* Native player: object-fit cover fills the screen, no ads. */
+    /* Original video: fills the screen, no bars. */
     #player {
       position: absolute; inset: 0; width: 100%; height: 100%;
-      object-fit: cover; background: #000; pointer-events: none;
+      object-fit: cover; background: #000; pointer-events: none; z-index: 0;
     }
 
-    .overlay {
-      position: fixed; user-select: none;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    /* Cloned videos spawned on every tap. */
+    .clone {
+      position: absolute; height: auto;
+      border: 3px solid #fff; border-radius: 10px;
+      box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+      background: #000; pointer-events: none;
     }
-
-    #hint {
-      left: 50%; bottom: 9%; transform: translateX(-50%); z-index: 6;
-      pointer-events: none; color: #fff; font-size: clamp(16px, 4.5vw, 26px);
-      padding: 0.65em 1.2em; background: rgba(0, 0, 0, 0.45);
-      border-radius: 999px; backdrop-filter: blur(4px);
-      transition: opacity 0.6s; text-align: center;
-    }
-    #hint.hidden { opacity: 0; }
-
-    /* Rotating taunt captions. */
-    #caption {
-      left: 50%; top: 11%; transform: translateX(-50%) translateY(-10px);
-      z-index: 5; pointer-events: none; color: #fff; font-weight: 800;
-      font-size: clamp(22px, 6.5vw, 52px); text-align: center; max-width: 90vw;
-      text-shadow: 0 2px 20px rgba(0, 0, 0, 0.75);
-      opacity: 0; transition: opacity 0.5s, transform 0.5s;
-    }
-    #caption.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-    /* Fake "Skip Ad" button. */
-    #skip {
-      right: 4%; bottom: 14%; z-index: 7; pointer-events: auto; cursor: pointer;
-      color: #fff; font-size: clamp(13px, 3.6vw, 18px); font-weight: 600;
-      padding: 0.6em 1em; background: rgba(0, 0, 0, 0.62);
-      border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 8px;
-      backdrop-filter: blur(3px);
-      transition: left 0.22s ease, top 0.22s ease, right 0.22s ease, bottom 0.22s ease, opacity 0.5s;
-    }
-    #skip.gone { opacity: 0; pointer-events: none; }
 
     /* Emoji burst particles. */
     .emoji {
-      position: fixed; z-index: 8; pointer-events: none;
+      position: fixed; z-index: 60; pointer-events: none;
       will-change: transform, opacity; animation: burst 1s ease-out forwards;
     }
     @keyframes burst {
       0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
       100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.25) rotate(var(--rot)); opacity: 0; }
     }
+
+    /* ---- The decoy: looks like a wedding highlights reel ---- */
+    #decoy {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background:
+        radial-gradient(120% 90% at 50% 30%, rgba(255,255,255,0.10), rgba(0,0,0,0) 60%),
+        linear-gradient(160deg, #3a2c42 0%, #6b4f5a 55%, #96747d 100%);
+      color: #fff8fa; text-align: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      transition: opacity 0.55s ease;
+      user-select: none;
+    }
+    #decoy.gone { opacity: 0; pointer-events: none; }
+
+    #play {
+      width: clamp(84px, 22vw, 128px); aspect-ratio: 1;
+      border-radius: 50%; background: rgba(255, 255, 255, 0.92);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      margin-bottom: clamp(20px, 5vh, 40px);
+    }
+    #play::after {
+      content: ""; margin-left: 12%;
+      border-style: solid; border-width: clamp(16px,4.4vw,24px) 0 clamp(16px,4.4vw,24px) clamp(28px,7.4vw,40px);
+      border-color: transparent transparent transparent #2a1c30;
+    }
+    #decoy h1 {
+      margin: 0; font-weight: normal;
+      font-size: clamp(30px, 8.5vw, 60px); letter-spacing: 0.01em;
+      text-shadow: 0 3px 22px rgba(0, 0, 0, 0.5);
+    }
+    #decoy p {
+      margin: 0.5em 0 0; font-style: italic;
+      font-size: clamp(15px, 4.4vw, 26px); color: #ecdfe4;
+      letter-spacing: 0.08em;
+    }
   </style>
 </head>
 <body>
   <div id="stage">
-    <div id="zoom">
-      <video id="player" src="daydream.mp4" autoplay muted loop playsinline preload="auto"></video>
-    </div>
-    <div id="caption" class="overlay"></div>
-    <div id="skip" class="overlay">Skip Ad in 5</div>
-    <div id="hint" class="overlay">tap anywhere</div>
+    <video id="player" src="daydream.mp4" autoplay muted loop playsinline preload="auto"></video>
+  </div>
+
+  <div id="decoy">
+    <div id="play"></div>
+    <h1>Wedding Highlights</h1>
+    <p>♡&nbsp;&nbsp;the full reel&nbsp;&nbsp;♡</p>
   </div>
 
   <script>
-    var stage   = document.getElementById('stage');
-    var hint    = document.getElementById('hint');
-    var caption = document.getElementById('caption');
-    var skip    = document.getElementById('skip');
-    var zoom    = document.getElementById('zoom');
-    var video   = document.getElementById('player');
+    var stage  = document.getElementById('stage');
+    var player = document.getElementById('player');
+    var decoy  = document.getElementById('decoy');
 
     var started = false;
+    var clones  = 0;
+    var MAX_CLONES = 16;               // keep phones happy
+    var emojis = ['❤️', '💕', '✨', '🎉', '💍', '🎶', '🌸'];
 
-    // Zoom cycle: normal -> face -> absurd nostril cam -> back around.
-    var zoomLevels = [
-      { s: 1,   oy: 34 },
-      { s: 2.6, oy: 34 },
-      { s: 5,   oy: 30 }
-    ];
-    var zi = 0;
-
-    var emojis = ['❤️', '💕', '💜', '💖', '🎵', '🎶', '✨', '🌟', '🎸', '🐒'];
-    var taunts = [
-      "you've been Monkee'd 🐒",
-      "cheer up, sleepy Jean",
-      "tap again 😏",
-      "there is no escape 😈",
-      "Daydream Believer 🎶",
-      "still no ads 😎"
-    ];
-    var ti = 0;
-
-    // Kick off muted autoplay for the "it's already playing" effect.
-    video.play().catch(function () {});
-
-    // ---- Fake "Skip Ad" countdown ----
-    var n = 5;
-    var cd = setInterval(function () {
-      n--;
-      if (n > 0) { skip.textContent = 'Skip Ad in ' + n; }
-      else { skip.textContent = 'Skip Ad ▶'; clearInterval(cd); }
-    }, 1000);
-
-    // Desktop: the button dodges the cursor before you've started.
-    skip.addEventListener('mouseenter', function () {
-      if (started) return;
-      skip.style.right = 'auto';
-      skip.style.bottom = 'auto';
-      skip.style.left = (Math.random() * 68 + 12) + 'vw';
-      skip.style.top  = (Math.random() * 68 + 12) + 'vh';
-    });
+    // Muted autoplay behind the decoy so it's already rolling on reveal.
+    player.play().catch(function () {});
 
     function requestFS() {
       var el = document.documentElement;
       var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-      if (fn) {
-        try { var p = fn.call(el); if (p && p.catch) p.catch(function () {}); }
-        catch (e) { /* not allowed / unsupported (e.g. iPhone Safari) */ }
-      }
+      if (fn) { try { var p = fn.call(el); if (p && p.catch) p.catch(function () {}); } catch (e) {} }
     }
 
-    function revealSkip() {
-      skip.textContent = 'lol — no ads here 😎';
-      setTimeout(function () { skip.classList.add('gone'); }, 1500);
+    function start() {
+      if (started) return;
+      started = true;
+      decoy.classList.add('gone');
+      setTimeout(function () { if (decoy.parentNode) decoy.remove(); }, 600);
+      requestFS();
+      player.muted = false;
+      player.volume = 1;
+      player.play().catch(function () {});
     }
 
-    function nextTaunt() {
-      caption.textContent = taunts[ti % taunts.length];
-      ti++;
-      caption.classList.add('show');
-      setTimeout(function () { caption.classList.remove('show'); }, 2200);
+    function spawnClone() {
+      if (clones >= MAX_CLONES) return;
+      clones++;
+      var v = document.createElement('video');
+      v.src = 'daydream.mp4';
+      v.muted = true; v.loop = true; v.autoplay = true;
+      v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
+      v.className = 'clone';
+      var w = 34 + Math.random() * 30;                 // vmin — responsive
+      v.style.width = w + 'vmin';
+      v.style.left = (8 + Math.random() * 84) + 'vw';
+      v.style.top  = (8 + Math.random() * 80) + 'vh';
+      v.style.transform = 'translate(-50%, -50%) rotate(' + (Math.random() * 30 - 15) + 'deg)';
+      v.style.zIndex = 10 + clones;
+      stage.appendChild(v);
+      try { v.currentTime = player.currentTime; } catch (e) {}
+      v.play().catch(function () {});
     }
 
     function burst(x, y) {
-      for (var i = 0; i < 11; i++) {
+      for (var i = 0; i < 7; i++) {
         var e = document.createElement('div');
         e.className = 'emoji';
         e.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-        var ang = Math.random() * Math.PI * 2;
-        var dist = 60 + Math.random() * 150;
-        e.style.left = x + 'px';
-        e.style.top = y + 'px';
+        var ang = Math.random() * Math.PI * 2, dist = 55 + Math.random() * 140;
+        e.style.left = x + 'px'; e.style.top = y + 'px';
         e.style.setProperty('--dx', (Math.cos(ang) * dist) + 'px');
-        e.style.setProperty('--dy', (Math.sin(ang) * dist - 45) + 'px'); // bias upward
+        e.style.setProperty('--dy', (Math.sin(ang) * dist - 40) + 'px');
         e.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
-        e.style.fontSize = (22 + Math.random() * 24) + 'px';
+        e.style.fontSize = (22 + Math.random() * 22) + 'px';
         document.body.appendChild(e);
         (function (el) { setTimeout(function () { el.remove(); }, 1050); })(e);
       }
     }
 
-    function applyZoom() {
-      var z = zoomLevels[zi];
-      zoom.style.transformOrigin = '50% ' + z.oy + '%';
-      zoom.style.transform = 'scale(' + z.s + ')';
-    }
+    // Tapping the decoy starts the show (this is the audio + fullscreen gesture).
+    decoy.addEventListener('click', function (ev) { ev.stopPropagation(); start(); });
 
+    // Every later tap clones the video and throws a little confetti.
     stage.addEventListener('click', function (ev) {
+      if (!started) return;
       var x = (ev.clientX != null) ? ev.clientX : window.innerWidth / 2;
       var y = (ev.clientY != null) ? ev.clientY : window.innerHeight / 2;
-
-      if (!started) {
-        // First tap: whole-screen takeover + sound + the show begins.
-        started = true;
-        requestFS();
-        hint.classList.add('hidden');
-        video.muted = false;
-        video.volume = 1;
-        video.play().catch(function () {});
-        revealSkip();
-        nextTaunt();
-        setInterval(nextTaunt, 2800);
-        zi = 1;              // jump straight to the face zoom
-        applyZoom();
-      } else {
-        // Every later tap: cycle the zoom harder and taunt.
-        zi = (zi + 1) % zoomLevels.length;
-        applyZoom();
-        nextTaunt();
-      }
-
+      spawnClone();
       burst(x, y);
     });
   </script>
