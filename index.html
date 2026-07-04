@@ -2,151 +2,195 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
 
-  <!-- Link preview -->
-  <title>Our Wedding Film</title>
+  <title>Emma &amp; James — Our Wedding</title>
   <meta property="og:title" content="Our Wedding Film 🎬" />
   <meta property="og:description" content="Aw, finally got the video back! ♡" />
   <meta property="og:image" content="https://jmep17.github.io/odonnelld/og-cover.png" />
   <meta property="og:type" content="video.other" />
   <meta name="twitter:card" content="summary_large_image" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>" />
 
   <style>
-    html, body { margin: 0; height: 100%; background: #000; overflow: hidden;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    :root { --ink:#4a3f3b; --rose:#9c626a; --cream:#faf6f1; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--cream); color: var(--ink); }
+    body { font-family: Georgia, 'Times New Roman', serif; -webkit-tap-highlight-color: transparent; }
 
-    #stage { position: fixed; inset: 0; overflow: hidden; background: #000;
-      -webkit-tap-highlight-color: transparent; }
+    .nav { position: sticky; top: 0; z-index: 5;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; background: rgba(250,246,241,0.92);
+      backdrop-filter: blur(6px); border-bottom: 1px solid #eaddd6; }
+    .brand { font-size: clamp(18px, 5vw, 24px); }
+    .brand span { color: var(--rose); }
+    .links { display: flex; gap: clamp(10px, 3.5vw, 26px); font-size: clamp(11px, 3vw, 14px);
+      font-family: system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; color: #8a7a72; }
+    .links a { color: inherit; text-decoration: none; white-space: nowrap; }
 
-    /* The "wedding video" playing in the background. */
-    #player { position: absolute; inset: 0; width: 100%; height: 100%;
-      object-fit: cover; background: #000; pointer-events: none; z-index: 0; }
+    .hero { text-align: center; padding: clamp(30px, 8vw, 64px) 20px clamp(12px, 4vw, 28px); }
+    .hero .date { font-family: system-ui, sans-serif; letter-spacing: 0.22em; text-transform: uppercase;
+      font-size: clamp(11px, 3vw, 14px); color: var(--rose); margin: 0 0 12px; }
+    .hero h1 { margin: 0; font-weight: normal; font-size: clamp(40px, 13vw, 88px); line-height: 1.05; }
+    .hero .sub { font-style: italic; color: #86766e; font-size: clamp(15px, 4.4vw, 22px); margin: 14px 0 0; }
 
-    /* Ads layer. */
-    #ads { position: fixed; inset: 0; z-index: 20; pointer-events: none; }
+    .film { max-width: 860px; margin: clamp(16px,5vw,36px) auto 0; padding: 0 18px; }
+    .film h2 { text-align: center; font-weight: normal; font-size: clamp(22px, 6vw, 34px); margin: 0 0 18px; }
+    .film h2::before, .film h2::after { content: "·"; color: var(--rose); margin: 0 12px; }
+    .player { position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden;
+      background: #1a1016; box-shadow: 0 18px 50px rgba(60,40,44,0.28); }
+    .player #master { position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; background: #1a1016; pointer-events: none; }
+    .player .ctrl { position: absolute; left: 0; right: 0; bottom: 0; height: 38px;
+      display: flex; align-items: center; gap: 10px; padding: 0 12px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.6)); color: #fff; }
+    .player .ctrl .tri { width: 0; border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent #fff; }
+    .player .ctrl .track { flex: 1; height: 4px; border-radius: 3px; background: rgba(255,255,255,0.4); }
+    .player .ctrl .track i { display: block; width: 26%; height: 100%; border-radius: 3px; background: var(--rose); }
+    .player .ctrl .t { font-family: system-ui, sans-serif; font-size: 12px; opacity: 0.9; }
+    .film .cap { text-align: center; font-style: italic; color: #90807a; font-size: 14px; margin: 14px 0 0; }
 
-    .ad { position: absolute; pointer-events: auto; background: #111;
-      border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.25);
-      box-shadow: 0 14px 44px rgba(0,0,0,0.6);
-      transition: transform 0.18s ease; will-change: transform; }
+    .story { max-width: 660px; margin: clamp(26px,7vw,50px) auto 0; padding: 0 24px; text-align: center;
+      font-size: clamp(16px, 4.4vw, 19px); line-height: 1.7; color: #5f524d; }
+    .gallery { max-width: 860px; margin: clamp(24px,6vw,40px) auto 0; padding: 0 18px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .gallery div { aspect-ratio: 1; border-radius: 8px; background: linear-gradient(135deg, #efe3db, #e3d0cc); }
+    footer { text-align: center; color: #a2938c; font-style: italic;
+      padding: clamp(30px,8vw,56px) 20px clamp(40px,10vw,70px); font-size: 15px; }
+
+    /* Ads (each is a <canvas> mirroring the one master video). */
+    #ads { position: fixed; inset: 0; z-index: 40; pointer-events: none; }
+    .ad { position: absolute; pointer-events: auto; background: #0d0d0f;
+      border-radius: 9px; overflow: hidden; border: 1px solid rgba(255,255,255,0.25);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.6); transition: transform 0.18s ease; will-change: transform; }
     .adbar { display: flex; align-items: center; justify-content: space-between;
       background: linear-gradient(90deg, #4a3dd0, #7b3ff2); color: #fff;
-      font-weight: 700; font-size: clamp(11px, 3vw, 14px);
-      padding: 6px 6px 6px 11px; letter-spacing: 0.4px; }
-    .adbar .lbl { display: flex; align-items: center; gap: 6px; }
-    .adbar .lbl i { font-style: normal; background: rgba(255,255,255,0.85); color: #3a2ea8;
-      border-radius: 3px; padding: 1px 5px; font-size: 0.82em; }
+      font-family: system-ui, sans-serif; font-weight: 700; font-size: clamp(11px,3vw,13px);
+      padding: 6px 7px 6px 11px; }
+    .adbar .lbl i { font-style: normal; background: rgba(255,255,255,0.9); color: #3a2ea8;
+      border-radius: 3px; padding: 1px 5px; margin-right: 6px; font-size: 0.85em; }
     .x { appearance: none; -webkit-appearance: none; border: 0; cursor: pointer;
       background: rgba(255,255,255,0.92); color: #222; font-weight: 800;
       width: 1.7em; height: 1.7em; border-radius: 5px; font-size: 1em; line-height: 1; }
-    .admedia { display: block; width: 100%; height: auto; background: #000; pointer-events: none; }
-
-    .emoji { position: fixed; z-index: 60; pointer-events: none;
-      will-change: transform, opacity; animation: burst 1s ease-out forwards; }
-    @keyframes burst {
-      0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
-      100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.25) rotate(var(--rot)); opacity: 0; }
-    }
+    .ad canvas { display: block; width: 100%; height: auto; background: #000; pointer-events: none; }
   </style>
 </head>
 <body>
-  <div id="stage">
-    <video id="player" src="daydream.mp4" autoplay muted loop playsinline preload="auto"></video>
+  <div id="site">
+    <header class="nav">
+      <div class="brand">Emma <span>&amp;</span> James</div>
+      <nav class="links"><a>Home</a><a>Story</a><a>Film</a><a>RSVP</a></nav>
+    </header>
+
+    <section class="hero">
+      <p class="date">Saturday · 12 September 2026</p>
+      <h1>Emma &amp; James</h1>
+      <p class="sub">thank you for celebrating with us ♡</p>
+    </section>
+
+    <section class="film">
+      <h2>Our Wedding Film</h2>
+      <div class="player">
+        <video id="master" src="daydream.mp4" autoplay muted loop playsinline preload="auto"></video>
+        <div class="ctrl"><span class="tri"></span><span class="track"><i></i></span><span class="t">1:12 / 4:32</span></div>
+      </div>
+      <p class="cap">Highlights — filmed at Kinard House, Perthshire</p>
+    </section>
+
+    <section class="story">
+      What a day. Thank you to every single one of you who travelled, danced,
+      and celebrated with us. Here's the full film — grab a cuppa and a hanky.
+      All our love, Emma &amp; James. x
+    </section>
+
+    <div class="gallery"><div></div><div></div><div></div></div>
+    <footer>Made with love · 2026</footer>
   </div>
+
   <div id="ads"></div>
 
   <script>
-    var player = document.getElementById('player');
-    var ads    = document.getElementById('ads');
+    var master = document.getElementById('master');
+    var ads = document.getElementById('ads');
+    var canvases = [];            // { cv, ctx }
+    var soundOn = false;
+    var adCount = 0, zTop = 40, MAX_ADS = 18;
 
-    var started = false;
-    var adCount = 0;         // live ads (for the cap)
-    var zTop = 20;           // stacking counter
-    var MAX_ADS = 12;        // keep phones happy
-    var emojis = ['❤️', '💕', '✨', '🎉', '💍', '🎶', '🌸'];
+    master.play().catch(function(){});
 
-    // Background "wedding video" autoplays muted immediately.
-    player.play().catch(function () {});
-
-    function requestFS() {
-      var el = document.documentElement;
-      var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-      if (fn) { try { var p = fn.call(el); if (p && p.catch) p.catch(function () {}); } catch (e) {} }
+    // One decode, painted onto every ad canvas each frame (in sync, iOS-safe).
+    var vw = 16, vh = 9;
+    master.addEventListener('loadedmetadata', function () {
+      vw = master.videoWidth || 16; vh = master.videoHeight || 9;
+      for (var i = 0; i < canvases.length; i++) sizeCanvas(canvases[i].cv);
+    });
+    function sizeCanvas(cv) {
+      var W = 320; cv.width = W; cv.height = Math.round(W * vh / vw);
     }
+    (function loop() {
+      if (master.readyState >= 2) {
+        for (var i = 0; i < canvases.length; i++) {
+          try { canvases[i].ctx.drawImage(master, 0, 0, canvases[i].cv.width, canvases[i].cv.height); } catch (e) {}
+        }
+      }
+      requestAnimationFrame(loop);
+    })();
 
     function makeAd(first) {
-      if (adCount >= MAX_ADS) return null;
-      adCount++;
       var ad = document.createElement('div');
       ad.className = 'ad';
-      var w = first ? 64 : (32 + Math.random() * 30);
+      var w = first ? 66 : (30 + Math.random() * 30);
       ad.style.width = w + 'vmin';
-      ad.style.left = (first ? 50 : 12 + Math.random() * 76) + 'vw';
-      ad.style.top  = (first ? 56 : 12 + Math.random() * 70) + 'vh';
-      var rot = first ? 0 : (Math.random() * 20 - 10);
-      ad.dataset.rot = rot;
-      ad.dataset.scale = 1;
-      ad.style.transform = 'translate(-50%, -50%) rotate(' + rot + 'deg)';
+      ad.style.left = (first ? 50 : 10 + Math.random() * 80) + 'vw';
+      ad.style.top  = (first ? 46 : 10 + Math.random() * 74) + 'vh';
+      var rot = first ? 0 : (Math.random() * 18 - 9);
+      ad.dataset.rot = rot; ad.dataset.scale = 1;
+      ad.style.transform = 'translate(-50%,-50%) rotate(' + rot + 'deg)';
       ad.style.zIndex = ++zTop;
-      ad.innerHTML = '<div class="adbar"><span class="lbl"><i>Ad</i>×</span>' +
+      ad.innerHTML = '<div class="adbar"><span class="lbl"><i>Ad</i>Sponsored</span>' +
                      '<button class="x" aria-label="Close">✕</button></div>';
-      var v = document.createElement('video');
-      v.src = 'daydream.mp4'; v.muted = true; v.loop = true; v.autoplay = true;
-      v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
-      v.className = 'admedia';
-      ad.appendChild(v);
+      var cv = document.createElement('canvas');
+      sizeCanvas(cv);
+      ad.appendChild(cv);
       ads.appendChild(ad);
-      try { v.currentTime = player.currentTime; } catch (e) {}
-      v.play().catch(function () {});
+      canvases.push({ cv: cv, ctx: cv.getContext('2d') });
+      adCount++;
       return ad;
     }
 
-    function burst(x, y) {
-      for (var i = 0; i < 7; i++) {
-        var e = document.createElement('div');
-        e.className = 'emoji';
-        e.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-        var ang = Math.random() * Math.PI * 2, dist = 55 + Math.random() * 140;
-        e.style.left = x + 'px'; e.style.top = y + 'px';
-        e.style.setProperty('--dx', (Math.cos(ang) * dist) + 'px');
-        e.style.setProperty('--dy', (Math.sin(ang) * dist - 40) + 'px');
-        e.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
-        e.style.fontSize = (22 + Math.random() * 22) + 'px';
-        document.body.appendChild(e);
-        (function (el) { setTimeout(function () { el.remove(); }, 1050); })(e);
-      }
+    function enableSound() {
+      if (soundOn) return;
+      soundOn = true;
+      master.muted = false; master.volume = 1;
+      master.play().catch(function(){});
     }
 
-    // Trying to close an ad: it grows and breeds instead.
-    function closeAttempt(ad, x, y) {
-      if (!started) {
-        started = true;
-        player.muted = false; player.volume = 1; player.play().catch(function () {});
-        requestFS();
-      }
+    function grow(ad) {
       var s = parseFloat(ad.dataset.scale || '1') * 1.28;
       ad.dataset.scale = s;
       ad.style.zIndex = ++zTop;
-      ad.style.transform = 'translate(-50%, -50%) rotate(' + ad.dataset.rot + 'deg) scale(' + s + ')';
-      makeAd(false);        // a fresh one pops up somewhere
-      burst(x, y);
+      ad.style.transform = 'translate(-50%,-50%) rotate(' + ad.dataset.rot + 'deg) scale(' + s + ')';
     }
 
+    // Any tap turns the sound on.
+    document.addEventListener('click', enableSound);
+
+    // Trying to close an ad grows it and spawns another — all still playing.
     ads.addEventListener('click', function (ev) {
-      var x = ev.target.closest && ev.target.closest('.x');
-      if (!x) return;
+      var xb = ev.target.closest && ev.target.closest('.x');
+      if (!xb) return;
       ev.stopPropagation();
-      var ad = x.closest('.ad');
-      var r = x.getBoundingClientRect();
-      closeAttempt(ad, r.left + r.width / 2, r.top + r.height / 2);
+      enableSound();
+      grow(xb.closest('.ad'));
+      if (adCount < MAX_ADS) makeAd(false);
     });
 
-    // The first ad appears shortly after the "video" starts.
-    setTimeout(function () { makeAd(true); }, 900);
+    // The first ad pops over the site shortly after load.
+    var first = makeAd(true);
+    first.style.opacity = '0'; first.style.transition = 'opacity .4s ease';
+    setTimeout(function () { first.style.opacity = '1'; }, 800);
   </script>
 </body>
 </html>
