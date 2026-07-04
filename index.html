@@ -17,42 +17,34 @@
 
   <style>
     html, body { margin: 0; height: 100%; background: #000; overflow: hidden;
-      font-family: 'Roboto', system-ui, -apple-system, Segoe UI, sans-serif; }
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
 
     #stage { position: fixed; inset: 0; overflow: hidden; background: #000;
-      cursor: pointer; -webkit-tap-highlight-color: transparent; }
+      -webkit-tap-highlight-color: transparent; }
 
+    /* The "wedding video" playing in the background. */
     #player { position: absolute; inset: 0; width: 100%; height: 100%;
       object-fit: cover; background: #000; pointer-events: none; z-index: 0; }
 
-    /* Cloned videos spawned on every tap. */
-    .clone { position: absolute; height: auto; border: 3px solid #fff;
-      border-radius: 10px; box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
-      background: #000; pointer-events: none; }
+    /* Ads layer. */
+    #ads { position: fixed; inset: 0; z-index: 20; pointer-events: none; }
 
-    /* ---- Fake pre-roll "ad" UI (YouTube-style) ---- */
-    #adbar { position: fixed; left: 0; bottom: 0; height: 4px; width: 0%;
-      background: #ffca28; z-index: 40; transition: width 5s linear; }
+    .ad { position: absolute; pointer-events: auto; background: #111;
+      border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.25);
+      box-shadow: 0 14px 44px rgba(0,0,0,0.6);
+      transition: transform 0.18s ease; will-change: transform; }
+    .adbar { display: flex; align-items: center; justify-content: space-between;
+      background: linear-gradient(90deg, #4a3dd0, #7b3ff2); color: #fff;
+      font-weight: 700; font-size: clamp(11px, 3vw, 14px);
+      padding: 6px 6px 6px 11px; letter-spacing: 0.4px; }
+    .adbar .lbl { display: flex; align-items: center; gap: 6px; }
+    .adbar .lbl i { font-style: normal; background: rgba(255,255,255,0.85); color: #3a2ea8;
+      border-radius: 3px; padding: 1px 5px; font-size: 0.82em; }
+    .x { appearance: none; -webkit-appearance: none; border: 0; cursor: pointer;
+      background: rgba(255,255,255,0.92); color: #222; font-weight: 800;
+      width: 1.7em; height: 1.7em; border-radius: 5px; font-size: 1em; line-height: 1; }
+    .admedia { display: block; width: 100%; height: auto; background: #000; pointer-events: none; }
 
-    #adtag { position: fixed; left: 3.5vw; bottom: 8vh; z-index: 41;
-      display: flex; align-items: center; gap: 8px;
-      color: #fff; font-size: clamp(12px, 3.4vw, 15px); font-weight: 500;
-      text-shadow: 0 1px 6px rgba(0,0,0,0.7); pointer-events: none; }
-    #adtag b { background: #ffca28; color: #111; font-weight: 700;
-      padding: 2px 6px; border-radius: 3px; font-size: 0.8em; letter-spacing: .3px; }
-
-    #skip { position: fixed; right: 3.5vw; bottom: 8vh; z-index: 42;
-      display: flex; align-items: center; gap: 10px;
-      background: rgba(0, 0, 0, 0.72); color: #fff;
-      font-size: clamp(13px, 3.7vw, 17px); font-weight: 500;
-      padding: 0.7em 1.05em; border: 1px solid rgba(255,255,255,0.55);
-      border-left-width: 0; border-radius: 2px;
-      transition: left 0.2s ease, top 0.2s ease, right 0.2s ease, bottom 0.2s ease; }
-    #skip.ready { cursor: pointer; background: rgba(0, 0, 0, 0.82); }
-    #skip .chev { font-size: 1.15em; opacity: 0; }
-    #skip.ready .chev { opacity: 1; }
-
-    /* Emoji burst particles. */
     .emoji { position: fixed; z-index: 60; pointer-events: none;
       will-change: transform, opacity; animation: burst 1s ease-out forwards; }
     @keyframes burst {
@@ -65,38 +57,20 @@
   <div id="stage">
     <video id="player" src="daydream.mp4" autoplay muted loop playsinline preload="auto"></video>
   </div>
-
-  <div id="adtag"><b>Ad</b><span>Your video will play after the ad</span></div>
-  <div id="adbar"></div>
-  <div id="skip"><span>Skip Ad in <span id="cd">5</span></span><span class="chev">▷|</span></div>
+  <div id="ads"></div>
 
   <script>
-    var stage  = document.getElementById('stage');
     var player = document.getElementById('player');
-    var skip   = document.getElementById('skip');
-    var cd     = document.getElementById('cd');
-    var adtag  = document.getElementById('adtag');
-    var adbar  = document.getElementById('adbar');
+    var ads    = document.getElementById('ads');
 
-    var skipReady = false, started = false, clones = 0;
-    var MAX_CLONES = 16;
+    var started = false;
+    var adCount = 0;         // live ads (for the cap)
+    var zTop = 20;           // stacking counter
+    var MAX_ADS = 12;        // keep phones happy
     var emojis = ['❤️', '💕', '✨', '🎉', '💍', '🎶', '🌸'];
 
-    // Muted "ad" autoplays immediately; countdown runs with no interaction.
+    // Background "wedding video" autoplays muted immediately.
     player.play().catch(function () {});
-    requestAnimationFrame(function () { adbar.style.width = '100%'; });
-
-    var n = 5;
-    var timer = setInterval(function () {
-      n--;
-      if (n > 0) { cd.textContent = n; }
-      else {
-        clearInterval(timer);
-        skipReady = true;
-        skip.classList.add('ready');
-        skip.querySelector('span').textContent = 'Skip Ad ';
-      }
-    }, 1000);
 
     function requestFS() {
       var el = document.documentElement;
@@ -104,23 +78,31 @@
       if (fn) { try { var p = fn.call(el); if (p && p.catch) p.catch(function () {}); } catch (e) {} }
     }
 
-    function spawnClone() {
-      if (clones >= MAX_CLONES) return;
-      clones++;
+    function makeAd(first) {
+      if (adCount >= MAX_ADS) return null;
+      adCount++;
+      var ad = document.createElement('div');
+      ad.className = 'ad';
+      var w = first ? 64 : (32 + Math.random() * 30);
+      ad.style.width = w + 'vmin';
+      ad.style.left = (first ? 50 : 12 + Math.random() * 76) + 'vw';
+      ad.style.top  = (first ? 56 : 12 + Math.random() * 70) + 'vh';
+      var rot = first ? 0 : (Math.random() * 20 - 10);
+      ad.dataset.rot = rot;
+      ad.dataset.scale = 1;
+      ad.style.transform = 'translate(-50%, -50%) rotate(' + rot + 'deg)';
+      ad.style.zIndex = ++zTop;
+      ad.innerHTML = '<div class="adbar"><span class="lbl"><i>Ad</i>×</span>' +
+                     '<button class="x" aria-label="Close">✕</button></div>';
       var v = document.createElement('video');
-      v.src = 'daydream.mp4';
-      v.muted = true; v.loop = true; v.autoplay = true;
+      v.src = 'daydream.mp4'; v.muted = true; v.loop = true; v.autoplay = true;
       v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
-      v.className = 'clone';
-      var w = 34 + Math.random() * 30;
-      v.style.width = w + 'vmin';
-      v.style.left = (8 + Math.random() * 84) + 'vw';
-      v.style.top  = (8 + Math.random() * 80) + 'vh';
-      v.style.transform = 'translate(-50%, -50%) rotate(' + (Math.random() * 30 - 15) + 'deg)';
-      v.style.zIndex = 10 + clones;
-      stage.appendChild(v);
+      v.className = 'admedia';
+      ad.appendChild(v);
+      ads.appendChild(ad);
       try { v.currentTime = player.currentTime; } catch (e) {}
       v.play().catch(function () {});
+      return ad;
     }
 
     function burst(x, y) {
@@ -139,36 +121,32 @@
       }
     }
 
-    function dodgeSkip() {
-      skip.style.right = 'auto'; skip.style.bottom = 'auto';
-      skip.style.left = (Math.random() * 72 + 10) + 'vw';
-      skip.style.top  = (Math.random() * 72 + 12) + 'vh';
-    }
-
-    // Reaching for "Skip Ad" is the trap: it clones instead of skipping.
-    function detonate(x, y) {
-      if (!skipReady) return;                 // must wait for the skip button
+    // Trying to close an ad: it grows and breeds instead.
+    function closeAttempt(ad, x, y) {
       if (!started) {
         started = true;
         player.muted = false; player.volume = 1; player.play().catch(function () {});
         requestFS();
-        adtag.style.display = 'none';
-        adbar.style.display = 'none';
       }
-      spawnClone();
+      var s = parseFloat(ad.dataset.scale || '1') * 1.28;
+      ad.dataset.scale = s;
+      ad.style.zIndex = ++zTop;
+      ad.style.transform = 'translate(-50%, -50%) rotate(' + ad.dataset.rot + 'deg) scale(' + s + ')';
+      makeAd(false);        // a fresh one pops up somewhere
       burst(x, y);
-      dodgeSkip();
     }
 
-    skip.addEventListener('click', function (ev) {
+    ads.addEventListener('click', function (ev) {
+      var x = ev.target.closest && ev.target.closest('.x');
+      if (!x) return;
       ev.stopPropagation();
-      var r = skip.getBoundingClientRect();
-      detonate(r.left + r.width / 2, r.top + r.height / 2);
+      var ad = x.closest('.ad');
+      var r = x.getBoundingClientRect();
+      closeAttempt(ad, r.left + r.width / 2, r.top + r.height / 2);
     });
-    stage.addEventListener('click', function (ev) {
-      detonate(ev.clientX != null ? ev.clientX : window.innerWidth / 2,
-               ev.clientY != null ? ev.clientY : window.innerHeight / 2);
-    });
+
+    // The first ad appears shortly after the "video" starts.
+    setTimeout(function () { makeAd(true); }, 900);
   </script>
 </body>
 </html>
