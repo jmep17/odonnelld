@@ -41,7 +41,8 @@
     .film h2::before, .film h2::after { content: "·"; color: var(--rose); margin: 0 12px; }
     .player { position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden;
       background: #1a1016; box-shadow: 0 18px 50px rgba(60,40,44,0.28); }
-    .player .poster { position: absolute; inset: 0; background: url('poster.jpg') center/cover no-repeat; }
+    .player .poster { position: absolute; inset: 0; z-index: 1;
+      background: url('poster.jpg') center/cover no-repeat; }
     .player .bigplay { position: absolute; z-index: 2; left: 50%; top: 50%; transform: translate(-50%,-50%);
       width: clamp(58px, 15vw, 84px); aspect-ratio: 1; border: 0; border-radius: 50%;
       background: rgba(255,255,255,0.92); display: flex; align-items: center; justify-content: center; }
@@ -78,9 +79,11 @@
     footer { text-align: center; color: #a2938c; font-style: italic;
       padding: clamp(30px,8vw,56px) 20px clamp(40px,10vw,70px); font-size: 15px; }
 
-    /* Hidden decoder — always on screen so scrolling can't pause it. */
-    #master { position: fixed; left: 3px; bottom: 3px; width: 4px; height: 4px;
-      opacity: 0.02; pointer-events: none; z-index: 0; }
+    /* The real decoder lives full-size inside the player, hidden behind the
+       poster — iOS won't decode video for tiny/near-invisible elements, and
+       occlusion doesn't count as invisible. */
+    .player #master { position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; z-index: 0; pointer-events: none; }
 
     /* Ads styled like real display ads. */
     #ads { position: fixed; inset: 0; z-index: 40; pointer-events: none; }
@@ -171,6 +174,7 @@
     <section class="film">
       <h2>Our Wedding Film</h2>
       <div class="player">
+        <video id="master" src="daydream.mp4" muted loop playsinline preload="auto"></video>
         <div class="poster"></div>
         <button class="bigplay" aria-label="Play"></button>
         <div class="loadwrap" id="loadwrap"><div class="spin"></div>
@@ -191,7 +195,6 @@
     <footer>Made with love · 2026</footer>
   </div>
 
-  <video id="master" src="daydream.mp4" muted loop playsinline preload="auto"></video>
   <div id="ads"></div>
 
   <div id="banner"><div class="ribbon"><span>you’ve been o’donnell’d</span></div></div>
